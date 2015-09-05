@@ -109,20 +109,27 @@ namespace MouseCounter
         private void Mh_MouseDownEvent(int btnmsg)
         {
             // event会自动使用Invoke在UI线程内调用，所以不用做其他额外处理
+            bool b = false;
             switch (btnmsg)
             {
                 case 513:
                     ++data.left;
+                    b = true;
                     break;
                 case 516:
                     ++data.right;
+                    b = true;
                     break;
                 case 519:
                     ++data.middle;
+                    b = true;
                     break;
             }
-            SaveData();
-            updateForm();
+            if (b)
+            {
+                SaveData();
+                updateForm();
+            }
         }
 
         private void Form1_FormClosed(object sender, FormClosedEventArgs e)
