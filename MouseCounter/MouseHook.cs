@@ -23,40 +23,47 @@ namespace MouseCounter
         public static extern int CallNextHookEx(int idHook, int nCode, int wParam, IntPtr lParam);
     }
 
-    public class MouseHook
+    public static class MouseHook
     {
-        private int hHook = 0;
+        private static int hHook = 0;
         private const int WH_MOUSE_LL = 14;
+        private static Win32Api.HookProc hProc = MouseHookProc;
 
-        public int SetHook()
+        public static int SetHook()
         {
             if (hHook != 0)
                 return hHook;
-
-            var hProc = new Win32Api.HookProc(MouseHookProc);
             hHook = Win32Api.SetWindowsHookEx(WH_MOUSE_LL, hProc, IntPtr.Zero, 0);
             return hHook;
         }
-        public void UnHook()
+        public static void UnHook()
         {
             if (hHook == 0)
                 return;
             Win32Api.UnhookWindowsHookEx(hHook);
             hHook = 0;
         }
-        private int MouseHookProc(int nCode, int wParam, IntPtr lParam)
+        private static int MouseHookProc(int nCode, int wParam, IntPtr lParam)
         {
             if (nCode == 0)
             {
                 if (MouseDownEvent != null)
                 {
-                    MouseDownEvent(wParam);
+                    try
+                    {
+                        MouseDownEvent(wParam);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.ToString(), "钩子事件异常");
+                    }
+                    
                 }
             }
             return Win32Api.CallNextHookEx(hHook, nCode, wParam, lParam);
         }
-        //委托+事件（把钩到的消息封装为事件，由调用者处理）
+
         public delegate void MouseDownHandler(int btnmsg);
-        public event MouseDownHandler MouseDownEvent;
+        public static event MouseDownHandler MouseDownEvent;
     }
 }

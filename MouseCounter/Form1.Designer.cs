@@ -38,6 +38,7 @@
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
+            this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.contextMenuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -68,14 +69,14 @@
             // startupToolStripMenuItem
             // 
             this.startupToolStripMenuItem.Name = "startupToolStripMenuItem";
-            this.startupToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.startupToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.startupToolStripMenuItem.Text = "开机自启";
             this.startupToolStripMenuItem.Click += new System.EventHandler(this.startupToolStripMenuItem_Click);
             // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.exitToolStripMenuItem.Text = "退出";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
@@ -105,6 +106,11 @@
             this.label4.Size = new System.Drawing.Size(41, 12);
             this.label4.TabIndex = 3;
             this.label4.Text = "label4";
+            // 
+            // timer1
+            // 
+            this.timer1.Interval = 60000;
+            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
             // Form1
             // 
@@ -137,6 +143,7 @@
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.ToolStripMenuItem startupToolStripMenuItem;
+        private System.Windows.Forms.Timer timer1;
     }
 }
 

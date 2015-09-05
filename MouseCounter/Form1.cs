@@ -23,8 +23,7 @@ namespace MouseCounter
             public int middle;
         }
 
-        MouseHook mh;
-        CurrentCounterData data;
+        static CurrentCounterData data;
 
         public Form1()
         {
@@ -63,24 +62,17 @@ namespace MouseCounter
             }
             File.AppendAllText(path, string.Format("{0},{1},{2},{3}\r\n", data.date.ToString("yyyy-MM-dd"), data.left, data.right, data.middle));
 
-            data = new CurrentCounterData();
+            data.left = data.right = data.middle = 0;
             data.date = DateTime.Now;
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
             notifyIcon1.ContextMenuStrip = contextMenuStrip1;
+            MouseHook.MouseDownEvent += Mh_MouseDownEvent;
+            MouseHook.SetHook();
 
-            mh = new MouseHook();
-            mh.MouseDownEvent += Mh_MouseDownEvent;
-            mh.SetHook();
-
-            d(
-                data.date.ToString("yyyy-MM-dd"),
-                string.Format("左键：{0}", data.left),
-                string.Format("右键：{0}", data.right),
-                string.Format("中键：{0}", data.middle)
-            );
+            updateForm();
 
             {
                 // 检查当前是否开启开机自启
@@ -101,9 +93,12 @@ namespace MouseCounter
 
         }
 
-        delegate void D(string s1, string s2, string s3, string s4);
-        private void d(string s1, string s2, string s3, string s4)
+        private void updateForm()
         {
+            var s1 = data.date.ToString("yyyy-MM-dd");
+            var s2 = string.Format("左键：{0}", data.left);
+            var s3 = string.Format("右键：{0}", data.right);
+            var s4 = string.Format("中键：{0}", data.middle);
             label1.Text = s1;
             label2.Text = s2;
             label3.Text = s3;
@@ -113,49 +108,26 @@ namespace MouseCounter
 
         private void Mh_MouseDownEvent(int btnmsg)
         {
-            bool b = false;
-
-            switch(btnmsg)
+            // event会自动使用Invoke在UI线程内调用，所以不用做其他额外处理
+            switch (btnmsg)
             {
-                // WM_LBUTTONDOWN
                 case 513:
-                    data.left++;
-                    b = true;
+                    ++data.left;
                     break;
-                // WM_RBUTTONDOWN
                 case 516:
-                    data.right++;
-                    b = true;
+                    ++data.right;
                     break;
-                // WM_MBUTTONDOWN
                 case 519:
-                    data.middle++;
-                    b = true;
+                    ++data.middle;
                     break;
             }
-
-            if (b)
-            {
-                SaveData();
-                this.Invoke(new D(d), new object[] {
-                    data.date.ToString("yyyy-MM-dd"),
-                    string.Format("左键：{0}", data.left),
-                    string.Format("右键：{0}", data.right),
-                    string.Format("中键：{0}", data.middle)
-                });
-                /*
-                label1.Text = btnmsg.ToString();
-                label2.Text = string.Format("左键：{0}", data.left);
-                label3.Text = string.Format("右键：{0}", data.right);
-                label4.Text = string.Format("中键：{0}", data.middle);
-                */
-            }
-
+            SaveData();
+            updateForm();
         }
 
         private void Form1_FormClosed(object sender, FormClosedEventArgs e)
         {
-            mh.UnHook();
+            MouseHook.UnHook();
             SaveData();
             var path = Path.Combine(Directory.GetCurrentDirectory(), "current.data");
             Utility.Serializer.Serialize(path, data);
@@ -220,10 +192,6 @@ namespace MouseCounter
 
                 startupToolStripMenuItem.Checked = true;
             }
-
-
-
-
         }
 
         private void Form1_Shown(object sender, EventArgs e)
@@ -235,6 +203,13 @@ namespace MouseCounter
                 this.WindowState = FormWindowState.Minimized;
                 this.Visible = false;
             }
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            // 1分钟保存一次数据，防止进程意外崩溃丢失数据
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "current.data");
+            Utility.Serializer.Serialize(path, data);
         }
     }
 

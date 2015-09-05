@@ -16,7 +16,15 @@ namespace MouseCounter
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
+            try
+            {
+                Application.Run(new Form1());
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString(), "主消息循环异常");
+            }
+            
         }
     }
 }
