@@ -28,7 +28,7 @@ namespace MouseCounter
         public Form1()
         {
             InitializeComponent();
-            var path = Path.Combine(Directory.GetCurrentDirectory(), "current.data");
+            var path = Path.Combine(Application.StartupPath, "current.data");
             try
             {
                 data = Utility.Serializer.Deserialize(path) as CurrentCounterData;
@@ -55,7 +55,7 @@ namespace MouseCounter
             if (!CheckDate())
                 return;
 
-            var path = Path.Combine(Directory.GetCurrentDirectory(), "history.csv");
+            var path = Path.Combine(Application.StartupPath, "history.csv");
             if (!File.Exists(path))
             {
                 File.WriteAllText(path, "date,left,right,middle\r\n");
@@ -68,6 +68,15 @@ namespace MouseCounter
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            {
+                // 根据命令行参数检查是否是开机自启，如果是就自动最小化运行
+                var cmdline = Environment.CommandLine;
+                if (cmdline.ToLower().IndexOf("/startup") != -1)
+                {
+                    this.WindowState = FormWindowState.Minimized;
+                }
+            }
+
             notifyIcon1.ContextMenuStrip = contextMenuStrip1;
             MouseHook.MouseDownEvent += Mh_MouseDownEvent;
             MouseHook.SetHook();
@@ -136,13 +145,14 @@ namespace MouseCounter
         {
             MouseHook.UnHook();
             SaveData();
-            var path = Path.Combine(Directory.GetCurrentDirectory(), "current.data");
+            var path = Path.Combine(Application.StartupPath, "current.data");
             Utility.Serializer.Serialize(path, data);
         }
 
         private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
         {
             this.Visible = true;
+            this.ShowInTaskbar = true;
             this.WindowState = FormWindowState.Normal;
             this.Activate();
         }
@@ -152,6 +162,7 @@ namespace MouseCounter
             if (this.WindowState == FormWindowState.Minimized)
             {
                 this.Visible = false;
+                this.ShowInTaskbar = false;
             }
         }
 
@@ -182,6 +193,7 @@ namespace MouseCounter
                 task.Principal.UserId = scheduler.ConnectedUser;
                 task.Principal.RunLevel = _TASK_RUNLEVEL.TASK_RUNLEVEL_HIGHEST;
                 task.Settings.ExecutionTimeLimit = "PT0S";
+                task.Settings.Priority = 4;
 
                 // 触发器
                 var trigger = task.Triggers.Create(_TASK_TRIGGER_TYPE2.TASK_TRIGGER_LOGON) as TaskScheduler.ILogonTrigger;
@@ -192,7 +204,7 @@ namespace MouseCounter
                 var action = task.Actions.Create(_TASK_ACTION_TYPE.TASK_ACTION_EXEC) as TaskScheduler.IExecAction;
                 action.Path = Application.ExecutablePath;
                 action.Arguments = "/startup";
-                action.WorkingDirectory = Directory.GetCurrentDirectory();
+                action.WorkingDirectory = Application.StartupPath;
 
                 var folder = scheduler.GetFolder("\\");
                 var regTask = folder.RegisterTaskDefinition("MouseCounter", task, (int)_TASK_CREATION.TASK_CREATE_OR_UPDATE, null, null, _TASK_LOGON_TYPE.TASK_LOGON_INTERACTIVE_TOKEN);
@@ -201,22 +213,24 @@ namespace MouseCounter
             }
         }
 
-        private void Form1_Shown(object sender, EventArgs e)
-        {
-            // 根据命令行参数检查是否是开机自启，如果是就自动最小化运行
-            var cmdline = Environment.CommandLine;
-            if (cmdline.ToLower().IndexOf("/startup") != -1)
-            {
-                this.WindowState = FormWindowState.Minimized;
-                this.Visible = false;
-            }
-        }
-
         private void timer1_Tick(object sender, EventArgs e)
         {
             // 1分钟保存一次数据，防止进程意外崩溃丢失数据
-            var path = Path.Combine(Directory.GetCurrentDirectory(), "current.data");
+            var path = Path.Combine(Application.StartupPath, "current.data");
             Utility.Serializer.Serialize(path, data);
+        }
+
+        private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            var path = Path.Combine(Application.StartupPath, "history.csv");
+            if (File.Exists(path))
+            {
+                Process.Start(path);
+            }
+            else
+            {
+                MessageBox.Show("暂无历史数据，多使用几天再看吧~", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 
